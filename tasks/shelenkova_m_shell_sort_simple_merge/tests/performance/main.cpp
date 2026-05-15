@@ -9,7 +9,6 @@
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/omp/include/ops_omp.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/seq/include/ops_seq.hpp"
-#include "shelenkova_m_shell_sort_simple_merge/stl/include/ops_stl.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/tbb/include/ops_tbb.hpp"
 #include "util/include/perf_test_util.hpp"
 
@@ -67,9 +66,10 @@ TEST_P(ShelenkovaMRunPerfTestShellSort, RunPerfShellSort) {
 
 namespace {
 
+// STL удален, оставлены только SEQ, OMP, TBB
 const auto kAllPerfTasks =
     ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeSEQ, ShelenkovaMShellSortSimpleMergeOMP,
-                                ShelenkovaMShellSortSimpleMergeTBB, ShelenkovaMShellSortSimpleMergeSTL>(
+                                ShelenkovaMShellSortSimpleMergeTBB>(
         PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
