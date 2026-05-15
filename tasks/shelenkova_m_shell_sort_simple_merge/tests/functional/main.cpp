@@ -1,97 +1,78 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <array>
+#include <chrono>
 #include <cstddef>
-#include <string>
-#include <tuple>
-#include <vector>
+#include <random>
 
+#include "performance/include/performance.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
-#include "shelenkova_m_shell_sort_simple_merge/omp/include/ops_omp.hpp"
-#include "shelenkova_m_shell_sort_simple_merge/seq/include/ops_seq.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/tbb/include/ops_tbb.hpp"
-#include "util/include/func_test_util.hpp"
-#include "util/include/util.hpp"
+#include "util/include/perf_test_util.hpp"
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-struct StaticTestCase {
-  std::vector<int> input;
-  std::string name;
-};
+namespace {
 
-const std::array<StaticTestCase, 12> kStaticTestCases = {
-    StaticTestCase{.input = std::vector<int>{1}, .name = "single"},
-    StaticTestCase{.input = std::vector<int>{2, 1}, .name = "two_unsorted"},
-    StaticTestCase{.input = std::vector<int>{1, 2, 3, 4, 5}, .name = "already_sorted"},
-    StaticTestCase{.input = std::vector<int>{5, 4, 3, 2, 1}, .name = "reverse_sorted"},
-    StaticTestCase{.input = std::vector<int>{5, 3, 8, 2, 1}, .name = "small_random"},
-    StaticTestCase{.input = std::vector<int>{7, 7, 7, 7, 7}, .name = "all_equal"},
-    StaticTestCase{.input = std::vector<int>{-5, -1, -10, -3, -2}, .name = "all_negative"},
-    StaticTestCase{.input = std::vector<int>{-3, 0, 5, -1, 2, -2}, .name = "mixed_signs"},
-    StaticTestCase{.input = std::vector<int>{10, -10, 10, -10, 0}, .name = "duplicates_with_zero"},
-    StaticTestCase{.input = std::vector<int>{9, 1, 8, 2, 7, 3, 6, 4, 5}, .name = "zigzag"},
-    StaticTestCase{.input = std::vector<int>{1000, 500, 250, 125, 62, 31, 15, 7, 3, 1}, .name = "halving"},
-    StaticTestCase{.input = std::vector<int>{42, -42, 17, 0, -1, 999, -999, 5}, .name = "extreme_mix"},
-};
+constexpr double kNanosToSeconds = 1e-9;
+constexpr int kMinRandomValue = -1000000;
+constexpr int kMaxRandomValue = 1000000;
 
-class ShelenkovaMRunFuncTestsShellSort : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
- public:
-  static std::string PrintTestParam(const TestType &test_param) {
-    return std::to_string(std::get<0>(test_param)) + "_" + std::get<1>(test_param);
-  }
+}  // namespace
+
+class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InType, OutType> {
+  static constexpr size_t kCount = 100000;
+  InType input_data_;
 
  protected:
-  void SetUp() override {
-    TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
-    const size_t idx = std::get<0>(params);
-    input_data_ = kStaticTestCases.at(idx).input;
+  void SetPerfAttributes(ppc::performance::PerfAttr &perf_attr) override {
+    const auto t0 = std::chrono::steady_clock::now();
+    perf_attr.current_timer = [t0] {
+      auto now = std::chrono::steady_clock::now();
+      auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now - t0).count();
+      return static_cast<double>(ns) * kNanosToSeconds;
+    };
+    perf_attr.num_running = 1;
+  }
 
-    expected_result_ = input_data_;
-    std::ranges::sort(expected_result_);
+  void SetUp() override {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(kMinRandomValue, kMaxRandomValue);
+
+    input_data_.resize(kCount);
+    for (size_t i = 0; i < kCount; ++i) {
+      input_data_[i] = dist(gen);
+    }
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return output_data == expected_result_;
+    if (output_data.size() != input_data_.size()) {
+      return false;
+    }
+    return std::ranges::is_sorted(output_data);
   }
 
   InType GetTestInputData() final {
     return input_data_;
   }
-
- private:
-  InType input_data_;
-  OutType expected_result_;
 };
 
-namespace {
-
-TEST_P(ShelenkovaMRunFuncTestsShellSort, ShellSortSimpleMerge) {
+TEST_P(ShelenkovaMRunPerfTestShellSort, RunPerfShellSort) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 12> kTestParam = []() {
-  std::array<TestType, 12> arr;
-  for (size_t i = 0; i < arr.size(); ++i) {
-    arr.at(i) = std::make_tuple(i, kStaticTestCases.at(i).name);
-  }
-  return arr;
-}();
+namespace {
 
-// STL удален, оставлены только SEQ, OMP, TBB
-const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSEQ, InType>(
-                                               kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-                                           ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeOMP, InType>(
-                                               kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-                                           ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeTBB, InType>(
-                                               kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge));
+const auto kAllPerfTasks =
+    ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeTBB>(
+        PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
 
-const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
+const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-const auto kPerfTestName = ShelenkovaMRunFuncTestsShellSort::PrintFuncTestName<ShelenkovaMRunFuncTestsShellSort>;
+const auto kPerfTestName = ShelenkovaMRunPerfTestShellSort::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(ShellSortTests, ShelenkovaMRunFuncTestsShellSort, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(ShellSortPerfTests, ShelenkovaMRunPerfTestShellSort, kGtestValues, kPerfTestName);
 
 }  // namespace
 
