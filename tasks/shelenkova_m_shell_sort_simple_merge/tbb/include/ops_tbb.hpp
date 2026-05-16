@@ -7,9 +7,7 @@ namespace shelenkova_m_shell_sort_simple_merge {
 
 class ShelenkovaMShellSortSimpleMergeTBB : public BaseTask {
  public:
-  static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
-    return ppc::task::TypeOfTask::kTBB;
-  }
+  static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() { return ppc::task::TypeOfTask::kTBB; }
   explicit ShelenkovaMShellSortSimpleMergeTBB(const InType &in);
 
  private:
