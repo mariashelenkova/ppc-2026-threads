@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <ranges>
 #include <utility>
 #include <vector>
 
@@ -40,9 +41,7 @@ ShelenkovaMShellSortSimpleMergeTBB::ShelenkovaMShellSortSimpleMergeTBB(const InT
   GetOutput() = in;
 }
 
-bool ShelenkovaMShellSortSimpleMergeTBB::ValidationImpl() {
-  return !GetInput().empty();
-}
+bool ShelenkovaMShellSortSimpleMergeTBB::ValidationImpl() { return !GetInput().empty(); }
 
 bool ShelenkovaMShellSortSimpleMergeTBB::PreProcessingImpl() {
   GetOutput() = GetInput();
@@ -92,8 +91,6 @@ bool ShelenkovaMShellSortSimpleMergeTBB::RunImpl() {
   return std::ranges::is_sorted(output);
 }
 
-bool ShelenkovaMShellSortSimpleMergeTBB::PostProcessingImpl() {
-  return !GetOutput().empty();
-}
+bool ShelenkovaMShellSortSimpleMergeTBB::PostProcessingImpl() { return !GetOutput().empty(); }
 
 }  // namespace shelenkova_m_shell_sort_simple_merge
