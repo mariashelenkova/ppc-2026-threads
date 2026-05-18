@@ -55,10 +55,14 @@ class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InTyp
     return std::ranges::is_sorted(output_data);
   }
 
-  InType GetTestInputData() final { return input_data_; }
+  InType GetTestInputData() final {
+    return input_data_;
+  }
 };
 
-TEST_P(ShelenkovaMRunPerfTestShellSort, RunPerfShellSort) { ExecuteTest(GetParam()); }
+TEST_P(ShelenkovaMRunPerfTestShellSort, RunPerfShellSort) {
+  ExecuteTest(GetParam());
+}
 
 namespace {
 
