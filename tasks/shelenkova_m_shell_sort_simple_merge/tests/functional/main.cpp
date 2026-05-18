@@ -52,9 +52,13 @@ class ShelenkovaMRunFuncTestsShellSort : public ppc::util::BaseRunFuncTests<InTy
     std::ranges::sort(expected_result_);
   }
 
-  bool CheckTestOutputData(OutType &output_data) final { return output_data == expected_result_; }
+  bool CheckTestOutputData(OutType &output_data) final {
+    return output_data == expected_result_;
+  }
 
-  InType GetTestInputData() final { return input_data_; }
+  InType GetTestInputData() final {
+    return input_data_;
+  }
 
  private:
   InType input_data_;
@@ -63,7 +67,9 @@ class ShelenkovaMRunFuncTestsShellSort : public ppc::util::BaseRunFuncTests<InTy
 
 namespace {
 
-TEST_P(ShelenkovaMRunFuncTestsShellSort, ShellSortSimpleMerge) { ExecuteTest(GetParam()); }
+TEST_P(ShelenkovaMRunFuncTestsShellSort, ShellSortSimpleMerge) {
+  ExecuteTest(GetParam());
+}
 
 const std::array<TestType, 12> kTestParam = []() {
   std::array<TestType, 12> arr;
