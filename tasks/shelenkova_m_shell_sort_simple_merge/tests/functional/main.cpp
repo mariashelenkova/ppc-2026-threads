@@ -10,6 +10,7 @@
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/omp/include/ops_omp.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/seq/include/ops_seq.hpp"
+#include "shelenkova_m_shell_sort_simple_merge/tbb/include/ops_tbb.hpp"
 #include "util/include/func_test_util.hpp"
 #include "util/include/util.hpp"
 
@@ -79,6 +80,8 @@ const std::array<TestType, 12> kTestParam = []() {
 }();
 
 const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSEQ, InType>(
+                                               kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+                                           ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeTBB, InType>(
                                                kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
                                            ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeOMP, InType>(
                                                kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge));
