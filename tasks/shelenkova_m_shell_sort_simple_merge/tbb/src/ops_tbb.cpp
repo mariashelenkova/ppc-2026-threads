@@ -1,11 +1,10 @@
 #include "shelenkova_m_shell_sort_simple_merge/tbb/include/ops_tbb.hpp"
 
-#include <tbb/parallel_for.h>
 #include <tbb/tbb.h>
 
 #include <algorithm>
 #include <cstddef>
-#include <iterator>
+#include <utility>
 #include <vector>
 
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
@@ -60,8 +59,7 @@ bool ShelenkovaMShellSortSimpleMergeTBB::RunImpl() {
   }
 
   const int raw_concurrency = tbb::this_task_arena::max_concurrency();
-  const size_t num_threads =
-      static_cast<size_t>(std::max(1, std::min(raw_concurrency, static_cast<int>(n))));
+  const size_t num_threads = std::min(n, static_cast<size_t>(std::max(1, raw_concurrency)));
   const size_t block_size = (n + num_threads - 1) / num_threads;
 
   std::vector<std::vector<int>> blocks(num_threads);
@@ -83,15 +81,12 @@ bool ShelenkovaMShellSortSimpleMergeTBB::RunImpl() {
 
   std::vector<int> result;
   result.reserve(n);
-
   for (size_t i = 0; i < num_threads; ++i) {
     if (blocks[i].empty()) {
       continue;
     }
-    std::vector<int> tmp;
-    tmp.reserve(result.size() + blocks[i].size());
-    std::merge(result.begin(), result.end(), blocks[i].begin(), blocks[i].end(),
-               std::back_inserter(tmp));
+    std::vector<int> tmp(result.size() + blocks[i].size());
+    std::merge(result.begin(), result.end(), blocks[i].begin(), blocks[i].end(), tmp.begin());
     result = std::move(tmp);
   }
 
