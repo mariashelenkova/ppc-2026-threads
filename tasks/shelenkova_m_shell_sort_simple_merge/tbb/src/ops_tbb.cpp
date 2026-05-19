@@ -1,5 +1,3 @@
-#include "shelenkova_m_shell_sort_simple_merge/tbb/include/ops_tbb.hpp"
-
 #include <tbb/tbb.h>
 
 #include <algorithm>
@@ -8,6 +6,7 @@
 #include <vector>
 
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
+#include "shelenkova_m_shell_sort_simple_merge/tbb/include/ops_tbb.hpp"
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
