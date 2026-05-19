@@ -5,12 +5,12 @@
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-class ShelenkovaMShellSortSimpleMergeSEQ : public BaseTask {
+class ShelenkovaMShellSortSimpleMergeTBB : public BaseTask {
  public:
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
-    return ppc::task::TypeOfTask::kSEQ;
+    return ppc::task::TypeOfTask::kTBB;
   }
-  explicit ShelenkovaMShellSortSimpleMergeSEQ(const InType &in);
+  explicit ShelenkovaMShellSortSimpleMergeTBB(const InType &in);
 
  private:
   bool ValidationImpl() override;
