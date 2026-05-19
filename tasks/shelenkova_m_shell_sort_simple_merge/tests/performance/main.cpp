@@ -68,8 +68,7 @@ namespace {
 
 const auto kAllPerfTasks =
     ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeSEQ, ShelenkovaMShellSortSimpleMergeOMP,
-                                ShelenkovaMShellSortSimpleMergeTBB>(
-        PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
+                                ShelenkovaMShellSortSimpleMergeTBB>(PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
