@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
 #include "task/include/task.hpp"
 
@@ -14,13 +12,11 @@ class ShelenkovaMShellSortSimpleMergeTBB : public BaseTask {
   }
   explicit ShelenkovaMShellSortSimpleMergeTBB(const InType &in);
 
-  private:
+ private:
   bool ValidationImpl() override;
   bool PreProcessingImpl() override;
   bool RunImpl() override;
   bool PostProcessingImpl() override;
-  double ComputeIntegral(const std::vector<int> &steps);
-  static double FunctionTypeChoose(int type_x, double x, double y);
 };
 
 }  // namespace shelenkova_m_shell_sort_simple_merge
