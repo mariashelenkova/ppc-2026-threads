@@ -35,7 +35,7 @@ class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InTyp
       auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now - t0).count();
       return static_cast<double>(ns) * kNanosToSeconds;
     };
-    perf_attr.num_running = 1;
+    perf_attr.num_running = 10;  
   }
 
   void SetUp() override {
@@ -53,7 +53,7 @@ class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InTyp
     if (output_data.size() != input_data_.size()) {
       return false;
     }
-    return std::ranges::is_sorted(output_data);
+    return std::is_sorted(output_data.begin(), output_data.end()); 
   }
 
   InType GetTestInputData() final {
