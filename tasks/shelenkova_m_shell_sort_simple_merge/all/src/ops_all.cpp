@@ -1,99 +1,100 @@
-#include "shelenkova_m_shell_sort_simple_merge/tbb/include/ops_tbb.hpp"
-
-#include <tbb/tbb.h>
+#include "shelenkova_m_shell_sort_simple_merge/all/include/ops_all.hpp"
 
 #include <algorithm>
 #include <cstddef>
-#include <utility>
+#include <cstdio>
+#include <thread>
 #include <vector>
 
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
+#include "util/include/util.hpp"
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-namespace {
-
-void ShellSort(std::vector<int> &data) {
-  const size_t n = data.size();
-  if (n <= 1) {
-    return;
-  }
-
-  for (size_t gap = n / 2; gap > 0; gap /= 2) {
-    for (size_t i = gap; i < n; ++i) {
-      int temp = data[i];
-      size_t j = i;
-      while (j >= gap && data[j - gap] > temp) {
-        data[j] = data[j - gap];
-        j -= gap;
+void ShelenkovaMShellSortSimpleMergeALL::GapBasedSort(std::vector<int>::iterator start_pos,
+                                                       std::vector<int>::iterator end_pos) {
+  for (std::ptrdiff_t step = (end_pos - start_pos) / 2; step > 0; step /= 2) {
+    for (auto position = start_pos + step; position != end_pos; ++position) {
+      for (auto mover = position; mover - start_pos >= step && (*mover < *(mover - step)); mover -= step) {
+        std::swap(*mover, *(mover - step));
       }
-      data[j] = temp;
     }
   }
 }
 
-}  // namespace
+std::vector<std::size_t> ShelenkovaMShellSortSimpleMergeALL::CalculateChunks(std::size_t total_len,
+                                                                               std::size_t chunk_cnt) {
+  chunk_cnt = std::max<std::size_t>(1, std::min(chunk_cnt, total_len));
 
-ShelenkovaMShellSortSimpleMergeTBB::ShelenkovaMShellSortSimpleMergeTBB(const InType &in) {
+  std::vector<std::size_t> boundaries;
+  boundaries.reserve(chunk_cnt + 1);
+  boundaries.push_back(0);
+
+  const std::size_t base_size = total_len / chunk_cnt;
+  const std::size_t extra = total_len % chunk_cnt;
+
+  for (std::size_t part_id = 0; part_id < chunk_cnt; ++part_id) {
+    boundaries.push_back(boundaries.back() + base_size);
+    if (part_id < extra) {
+      boundaries[part_id + 1]++;
+    }
+  }
+
+  return boundaries;
+}
+
+ShelenkovaMShellSortSimpleMergeALL::ShelenkovaMShellSortSimpleMergeALL(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
-  GetOutput() = in;
+  GetOutput() = std::vector<int>();
 }
 
-bool ShelenkovaMShellSortSimpleMergeTBB::ValidationImpl() {
-  return !GetInput().empty();
+bool ShelenkovaMShellSortSimpleMergeALL::ValidationImpl() {
+  const InType &input_vec = GetInput();
+  return !input_vec.empty();
 }
 
-bool ShelenkovaMShellSortSimpleMergeTBB::PreProcessingImpl() {
+bool ShelenkovaMShellSortSimpleMergeALL::PreProcessingImpl() {
   GetOutput() = GetInput();
   return true;
 }
 
-bool ShelenkovaMShellSortSimpleMergeTBB::RunImpl() {
-  const std::vector<int> &input = GetInput();
-  std::vector<int> &output = GetOutput();
+bool ShelenkovaMShellSortSimpleMergeALL::RunImpl() {
+  std::vector<int> &data_buffer = GetOutput();
 
-  const size_t n = input.size();
-  if (n <= 1) {
+  if (data_buffer.size() <= 1) {
     return true;
   }
 
-  const int raw_concurrency = tbb::this_task_arena::max_concurrency();
-  const size_t num_threads = std::min(n, static_cast<size_t>(std::max(1, raw_concurrency)));
-  const size_t block_size = (n + num_threads - 1) / num_threads;
+  const auto thread_limit = static_cast<std::size_t>(ppc::util::GetNumThreads());
+  const std::size_t partition_count = std::min<std::size_t>(thread_limit, data_buffer.size());
+  const auto partition_points = CalculateChunks(data_buffer.size(), partition_count);
 
-  std::vector<std::vector<int>> blocks(num_threads);
+  std::vector<std::thread> workers(partition_count);
 
-  tbb::parallel_for(tbb::blocked_range<size_t>(0, num_threads), [&](const tbb::blocked_range<size_t> &r) {
-    for (size_t block_id = r.begin(); block_id < r.end(); ++block_id) {
-      const size_t start = block_id * block_size;
-      if (start >= n) {
-        continue;
-      }
-      const size_t end = std::min(start + block_size, n);
-      blocks[block_id].assign(input.begin() + static_cast<std::ptrdiff_t>(start),
-                              input.begin() + static_cast<std::ptrdiff_t>(end));
-      ShellSort(blocks[block_id]);
-    }
-  });
-
-  std::vector<int> result;
-  result.reserve(n);
-  for (size_t i = 0; i < num_threads; ++i) {
-    if (blocks[i].empty()) {
-      continue;
-    }
-    std::vector<int> tmp(result.size() + blocks[i].size());
-    std::merge(result.begin(), result.end(), blocks[i].begin(), blocks[i].end(), tmp.begin());
-    result = std::move(tmp);
+  for (std::size_t part_idx = 0; part_idx < partition_count; ++part_idx) {
+    const std::size_t left_edge = partition_points[part_idx];
+    const std::size_t right_edge = partition_points[part_idx + 1];
+    workers[part_idx] = std::thread([&data_buffer, left_edge, right_edge]() {
+      GapBasedSort(data_buffer.begin() + static_cast<std::ptrdiff_t>(left_edge),
+                   data_buffer.begin() + static_cast<std::ptrdiff_t>(right_edge));
+    });
   }
 
-  output = std::move(result);
-  return std::ranges::is_sorted(output);
+  for (auto &worker : workers) {
+    worker.join();
+  }
+
+  for (std::size_t part_idx = 1; part_idx < partition_count; ++part_idx) {
+    std::inplace_merge(data_buffer.begin(), data_buffer.begin() + static_cast<std::ptrdiff_t>(partition_points[part_idx]),
+                       data_buffer.begin() + static_cast<std::ptrdiff_t>(partition_points[part_idx + 1]));
+  }
+
+  return true;
 }
 
-bool ShelenkovaMShellSortSimpleMergeTBB::PostProcessingImpl() {
-  return !GetOutput().empty();
+bool ShelenkovaMShellSortSimpleMergeALL::PostProcessingImpl() {
+  return true;
 }
 
 }  // namespace shelenkova_m_shell_sort_simple_merge
