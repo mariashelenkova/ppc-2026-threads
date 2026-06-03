@@ -69,6 +69,7 @@ bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
   }
   offsets[thread_count] = n;
 
+  // Параллельная сортировка каждой части
   {
     std::vector<std::thread> threads;
     threads.reserve(thread_count);
@@ -83,14 +84,21 @@ bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
     }
   }
 
-  // ИСПРАВЛЕНИЕ: объединяем все части правильно
-  for (size_t step = 1; step < thread_count; ++step) {
-    std::inplace_merge(data.begin(), 
-                       data.begin() + static_cast<std::ptrdiff_t>(offsets[step]),
-                       data.begin() + static_cast<std::ptrdiff_t>(offsets[step + 1]));
+  // Последовательное слияние всех частей
+  // Начинаем с размера блока = 1 и увеличиваем его на каждом шаге
+  for (size_t size = 1; size < thread_count; size *= 2) {
+    for (size_t left = 0; left < thread_count; left += 2 * size) {
+      size_t mid = std::min(left + size, thread_count);
+      size_t right = std::min(left + 2 * size, thread_count);
+      
+      if (mid < right) {
+        std::inplace_merge(data.begin() + static_cast<std::ptrdiff_t>(offsets[left]),
+                          data.begin() + static_cast<std::ptrdiff_t>(offsets[mid]),
+                          data.begin() + static_cast<std::ptrdiff_t>(offsets[right]));
+      }
+    }
   }
 
-  // ИСПРАВЛЕНИЕ: добавляем проверку на пустоту результата
   if (data.empty()) {
     return false;
   }
