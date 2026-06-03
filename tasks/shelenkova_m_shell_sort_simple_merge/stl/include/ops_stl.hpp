@@ -15,9 +15,9 @@ class ShelenkovaMShellSortSimpleMergeSTL : public BaseTask {
   }
   explicit ShelenkovaMShellSortSimpleMergeSTL(const InType &in);
 
-  static void GapBasedSort(std::vector<int>::iterator start_pos, std::vector<int>::iterator end_pos);
-  static void SimpleMergeSort(std::vector<int> &arr);
-  static std::vector<std::size_t> CalculateChunks(std::size_t total_len, std::size_t chunk_cnt);
+  static void BaseShellSort(std::vector<int>::iterator first, std::vector<int>::iterator last);
+  static void ShellSortMerge(std::vector<int> &vec);
+  static std::vector<std::size_t> GetBounds(std::size_t n, std::size_t parts);
 
  private:
   bool ValidationImpl() override;
