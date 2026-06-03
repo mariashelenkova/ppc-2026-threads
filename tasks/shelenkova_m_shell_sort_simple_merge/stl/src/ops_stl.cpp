@@ -6,7 +6,6 @@
 #include <thread>
 #include <vector>
 
-#include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
 #include "util/include/util.hpp"
 
 namespace shelenkova_m_shell_sort_simple_merge {
@@ -34,21 +33,25 @@ void ShellSort(std::vector<int>::iterator begin, std::vector<int>::iterator end)
 
 }  // namespace
 
-ShelenkovaMShellSortSimpleMergeSTL::ShelenkovaMShellSortSimpleMergeSTL(const InType& in) {
-  SetTypeOfTask(GetStaticTypeOfTask());
-  GetInput() = in;
-  GetOutput() = in;
+ShelenkovaMShellSortSimpleMergeSTL::ShelenkovaMShellSortSimpleMergeSTL(
+    std::shared_ptr<ppc::task::TaskData> task_data)
+    : TaskSTL(std::move(task_data)) {}
+
+bool ShelenkovaMShellSortSimpleMergeSTL::validation() {
+  // Check that input is not empty
+  auto* in_ptr = reinterpret_cast<std::vector<int>*>(task_data->inputs[0]);
+  return in_ptr != nullptr && !in_ptr->empty();
 }
 
-bool ShelenkovaMShellSortSimpleMergeSTL::ValidationImpl() { return !GetInput().empty(); }
-
-bool ShelenkovaMShellSortSimpleMergeSTL::PreProcessingImpl() {
-  GetOutput() = GetInput();
+bool ShelenkovaMShellSortSimpleMergeSTL::pre_processing() {
+  auto* in_ptr = reinterpret_cast<std::vector<int>*>(task_data->inputs[0]);
+  input_ = *in_ptr;
+  output_ = input_;
   return true;
 }
 
-bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
-  std::vector<int>& data = GetOutput();
+bool ShelenkovaMShellSortSimpleMergeSTL::run() {
+  std::vector<int>& data = output_;
   const size_t n = data.size();
   if (n <= 1) {
     return true;
@@ -67,6 +70,7 @@ bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
   }
   offsets[thread_count] = n;
 
+  // Parallel sort of each chunk
   {
     std::vector<std::thread> threads;
     threads.reserve(thread_count);
@@ -80,7 +84,7 @@ bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
     }
   }
 
-  // Merge all sorted parts
+  // Merge all sorted chunks
   for (size_t step = 1; step < thread_count; step *= 2) {
     for (size_t left = 0; left < thread_count; left += step * 2) {
       size_t mid = left + step;
@@ -96,6 +100,10 @@ bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
   return std::is_sorted(data.begin(), data.end());
 }
 
-bool ShelenkovaMShellSortSimpleMergeSTL::PostProcessingImpl() { return !GetOutput().empty(); }
+bool ShelenkovaMShellSortSimpleMergeSTL::post_processing() {
+  auto* out_ptr = reinterpret_cast<std::vector<int>*>(task_data->outputs[0]);
+  *out_ptr = output_;
+  return !output_.empty();
+}
 
 }  // namespace shelenkova_m_shell_sort_simple_merge
