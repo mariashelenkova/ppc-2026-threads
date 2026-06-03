@@ -5,7 +5,7 @@
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-class ShelenkovaMShellSortSimpleMergeSTL : public BaseTask {
+class ShelenkovaMShellSortSimpleMergeSTL : public ppc::task::BaseTask {
  public:
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
     return ppc::task::TypeOfTask::kSTL;
