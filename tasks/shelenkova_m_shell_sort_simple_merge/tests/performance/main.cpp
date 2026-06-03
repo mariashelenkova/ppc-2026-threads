@@ -15,17 +15,17 @@
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InType, OutType> {
+class ShelenkovaMRunFuncTestsShellSort : public ppc::util::BaseRunPerfTests<InType, OutType> {
  protected:
   void SetUp() override {
-    int dim = 1000000;
+    int dim = 2000000;
 
-    InType& in = input_data_;
+    InType &in = input_data_;
     in.clear();
     in.reserve(dim);
 
-    std::random_device rd;
-    std::mt19937_64 rng(rd());
+    int seed = 1;
+    std::mt19937 rng(seed);
     std::uniform_int_distribution<int> dist(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 
     for (int i = 0; i < dim; ++i) {
@@ -33,10 +33,10 @@ class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InTyp
     }
 
     test_result_ = in;
-    std::sort(test_result_.begin(), test_result_.end());
+    std::ranges::sort(test_result_);
   }
 
-  bool CheckTestOutputData(OutType& output_data) final {
+  bool CheckTestOutputData(OutType &output_data) final {
     if (output_data.size() != test_result_.size()) {
       return false;
     }
@@ -48,27 +48,32 @@ class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InTyp
     return true;
   }
 
-  InType GetTestInputData() final { return input_data_; }
+  InType GetTestInputData() final {
+    return input_data_;
+  }
 
  private:
   InType input_data_;
   OutType test_result_;
 };
 
-TEST_P(ShelenkovaMRunPerfTestShellSort, PerfSortTest) { ExecuteTest(GetParam()); }
+TEST_P(ShelenkovaMRunFuncTestsShellSort, PerfSortTest) {
+  ExecuteTest(GetParam());
+}
 
 namespace {
 
 const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeSEQ, ShelenkovaMShellSortSimpleMergeOMP,
-                                ShelenkovaMShellSortSimpleMergeTBB, ShelenkovaMShellSortSimpleMergeSTL>(
-        PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
+    ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeSEQ,
+                                ShelenkovaMShellSortSimpleMergeOMP,
+                                ShelenkovaMShellSortSimpleMergeTBB,
+                                ShelenkovaMShellSortSimpleMergeSTL>(PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-const auto kPerfTestName = ShelenkovaMRunPerfTestShellSort::CustomPerfTestName;
+const auto kPerfTestName = ShelenkovaMRunFuncTestsShellSort::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(shellSortPerfTests, ShelenkovaMRunPerfTestShellSort, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(shellSortSimpleMergePerfTests, ShelenkovaMRunFuncTestsShellSort, kGtestValues, kPerfTestName);
 
 }  // namespace
 
