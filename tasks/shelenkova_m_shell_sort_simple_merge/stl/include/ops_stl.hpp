@@ -7,13 +7,13 @@
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-class ShelenkovaMShellSortSimpleMergeSTL : public ppc::task::TaskSTL {
+class ShelenkovaMShellSortSimpleMergeSTL : public ppc::task::Task {
  public:
-  explicit ShelenkovaMShellSortSimpleMergeSTL(std::shared_ptr<ppc::task::TaskData> task_data);
+  explicit ShelenkovaMShellSortSimpleMergeSTL(ppc::task::TaskDataPtr task_data);
   ~ShelenkovaMShellSortSimpleMergeSTL() override = default;
 
-  bool validation() override;
   bool pre_processing() override;
+  bool validation() override;
   bool run() override;
   bool post_processing() override;
 
