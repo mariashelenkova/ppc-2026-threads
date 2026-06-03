@@ -1,25 +1,22 @@
 #pragma once
 
-#include <vector>
-
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
 #include "task/include/task.hpp"
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-class ShelenkovaMShellSortSimpleMergeSTL : public ppc::task::Task {
+class ShelenkovaMShellSortSimpleMergeSTL : public BaseTask {
  public:
-  explicit ShelenkovaMShellSortSimpleMergeSTL(ppc::task::TaskDataPtr task_data);
-  ~ShelenkovaMShellSortSimpleMergeSTL() override = default;
-
-  bool pre_processing() override;
-  bool validation() override;
-  bool run() override;
-  bool post_processing() override;
+  static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
+    return ppc::task::TypeOfTask::kSTL;
+  }
+  explicit ShelenkovaMShellSortSimpleMergeSTL(const InType &in);
 
  private:
-  std::vector<int> input_;
-  std::vector<int> output_;
+  bool ValidationImpl() override;
+  bool PreProcessingImpl() override;
+  bool RunImpl() override;
+  bool PostProcessingImpl() override;
 };
 
 }  // namespace shelenkova_m_shell_sort_simple_merge
