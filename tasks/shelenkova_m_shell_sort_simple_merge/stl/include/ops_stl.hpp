@@ -12,10 +12,6 @@ class ShelenkovaMShellSortSimpleMergeSTL : public BaseTask {
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() { return ppc::task::TypeOfTask::kSTL; }
   explicit ShelenkovaMShellSortSimpleMergeSTL(const InType& in);
 
-  static void SortingProcedure(std::vector<int>::iterator start, std::vector<int>::iterator finish);
-  static void FullSorting(std::vector<int>& container);
-  static std::vector<std::size_t> PartitionIndices(std::size_t total, std::size_t segments);
-
  private:
   bool ValidationImpl() override;
   bool PreProcessingImpl() override;
