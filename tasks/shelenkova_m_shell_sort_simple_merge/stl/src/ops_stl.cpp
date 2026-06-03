@@ -80,6 +80,7 @@ bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
     }
   }
 
+  // Merge all sorted parts
   for (size_t step = 1; step < thread_count; step *= 2) {
     for (size_t left = 0; left < thread_count; left += step * 2) {
       size_t mid = left + step;
