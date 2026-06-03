@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <iterator>
+#include <cstdio>
 #include <thread>
 #include <vector>
 
@@ -11,37 +11,46 @@
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-namespace {
-
-void ShellSort(std::vector<int>::iterator begin, std::vector<int>::iterator end) {
-  const size_t n = static_cast<size_t>(std::distance(begin, end));
-  if (n <= 1) {
-    return;
-  }
-
-  for (size_t gap = n / 2; gap > 0; gap /= 2) {
-    for (size_t i = gap; i < n; ++i) {
-      int temp = *(begin + static_cast<std::ptrdiff_t>(i));
-      size_t j = i;
-      while (j >= gap && *(begin + static_cast<std::ptrdiff_t>(j - gap)) > temp) {
-        *(begin + static_cast<std::ptrdiff_t>(j)) = *(begin + static_cast<std::ptrdiff_t>(j - gap));
-        j -= gap;
+void ShelenkovaMShellSortSimpleMergeSTL::BaseShellSort(std::vector<int>::iterator first,
+                                                        std::vector<int>::iterator last) {
+  for (std::ptrdiff_t dist = (last - first) / 2; dist > 0; dist /= 2) {
+    for (auto i = first + dist; i != last; ++i) {
+      for (auto j = i; j - first >= dist && (*j < *(j - dist)); j -= dist) {
+        std::swap(*j, *(j - dist));
       }
-      *(begin + static_cast<std::ptrdiff_t>(j)) = temp;
     }
   }
 }
 
-}  // namespace
+std::vector<std::size_t> ShelenkovaMShellSortSimpleMergeSTL::GetBounds(std::size_t n, std::size_t parts) {
+  parts = std::max<std::size_t>(1, std::min(parts, n));
+
+  std::vector<std::size_t> bounds;
+  bounds.reserve(parts + 1);
+  bounds.push_back(0);
+
+  const std::size_t base = n / parts;
+  const std::size_t rem = n % parts;
+
+  for (std::size_t i = 0; i < parts; ++i) {
+    bounds.push_back(bounds.back() + base);
+    if (i < rem) {
+      bounds[i + 1]++;
+    }
+  }
+
+  return bounds;
+}
 
 ShelenkovaMShellSortSimpleMergeSTL::ShelenkovaMShellSortSimpleMergeSTL(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
-  GetOutput() = in;
+  GetOutput() = std::vector<int>();
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::ValidationImpl() {
-  return !GetInput().empty();
+  const InType &vec = GetInput();
+  return !vec.empty();
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::PreProcessingImpl() {
@@ -50,49 +59,40 @@ bool ShelenkovaMShellSortSimpleMergeSTL::PreProcessingImpl() {
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
-  std::vector<int> &data = GetOutput();
-  const size_t n = data.size();
-  if (n <= 1) {
+  std::vector<int> &vec = GetOutput();
+
+  if (vec.size() <= 1) {
     return true;
   }
 
-  const int num_threads = std::max(1, ppc::util::GetNumThreads());
-  const size_t thread_count = std::min<size_t>(static_cast<size_t>(num_threads), n);
-  const size_t chunk = n / thread_count;
-  const size_t rem = n % thread_count;
+  const auto threads = static_cast<std::size_t>(ppc::util::GetNumThreads());
+  const std::size_t parts_count = std::min<std::size_t>(threads, vec.size());
+  const auto bounds = GetBounds(vec.size(), parts_count);
 
-  std::vector<size_t> offsets(thread_count + 1);
-  size_t curr = 0;
-  for (size_t i = 0; i < thread_count; ++i) {
-    offsets[i] = curr;
-    curr += chunk + (i < rem ? 1 : 0);
-  }
-  offsets[thread_count] = n;
+  std::vector<std::thread> thread_pool(parts_count);
 
-  {
-    std::vector<std::thread> threads;
-    threads.reserve(thread_count);
-    for (size_t i = 0; i < thread_count; ++i) {
-      threads.emplace_back([&data, &offsets, i]() {
-        ShellSort(data.begin() + static_cast<std::ptrdiff_t>(offsets[i]),
-                  data.begin() + static_cast<std::ptrdiff_t>(offsets[i + 1]));
-      });
-    }
-    for (auto &t : threads) {
-      t.join();
-    }
+  for (std::size_t i = 0; i < parts_count; ++i) {
+    const std::size_t l = bounds[i];
+    const std::size_t r = bounds[i + 1];
+    thread_pool[i] = std::thread([&vec, l, r]() {
+      BaseShellSort(vec.begin() + static_cast<std::ptrdiff_t>(l), vec.begin() + static_cast<std::ptrdiff_t>(r));
+    });
   }
 
-  for (size_t step = 1; step < thread_count; ++step) {
-    std::inplace_merge(data.begin(), data.begin() + static_cast<std::ptrdiff_t>(offsets[step]),
-                       data.begin() + static_cast<std::ptrdiff_t>(offsets[step + 1]));
+  for (auto &t : thread_pool) {
+    t.join();
   }
 
-  return std::ranges::is_sorted(data);
+  for (std::size_t i = 1; i < parts_count; ++i) {
+    std::inplace_merge(vec.begin(), vec.begin() + static_cast<std::ptrdiff_t>(bounds[i]),
+                       vec.begin() + static_cast<std::ptrdiff_t>(bounds[i + 1]));
+  }
+
+  return true;
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::PostProcessingImpl() {
-  return !GetOutput().empty();
+  return true;
 }
 
 }  // namespace shelenkova_m_shell_sort_simple_merge
