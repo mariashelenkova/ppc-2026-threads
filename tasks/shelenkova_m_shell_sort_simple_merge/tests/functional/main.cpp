@@ -50,7 +50,7 @@ class ShelenkovaMRunFuncTestsShellSort : public ppc::util::BaseRunFuncTests<InTy
     input_data_ = kStaticTestCases.at(idx).input;
 
     expected_result_ = input_data_;
-    std::sort(expected_result_.begin(), expected_result_.end()); 
+    std::ranges::sort(expected_result_);
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
@@ -91,9 +91,9 @@ const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<ShelenkovaMShe
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kTestName = ShelenkovaMRunFuncTestsShellSort::PrintFuncTestName<ShelenkovaMRunFuncTestsShellSort>; 
+const auto kPerfTestName = ShelenkovaMRunFuncTestsShellSort::PrintFuncTestName<ShelenkovaMRunFuncTestsShellSort>;
 
-INSTANTIATE_TEST_SUITE_P(ShellSortTests, ShelenkovaMRunFuncTestsShellSort, kGtestValues, kTestName); 
+INSTANTIATE_TEST_SUITE_P(ShellSortTests, ShelenkovaMRunFuncTestsShellSort, kGtestValues, kPerfTestName);
 
 }  // namespace
 
