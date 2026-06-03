@@ -53,13 +53,9 @@ class ShelenkovaMRunFuncTestsShellSort : public ppc::util::BaseRunFuncTests<InTy
     std::sort(expected_result_.begin(), expected_result_.end());
   }
 
-  bool CheckTestOutputData(OutType& output_data) final {
-    return output_data == expected_result_;
-  }
+  bool CheckTestOutputData(OutType& output_data) final { return output_data == expected_result_; }
 
-  InType GetTestInputData() final {
-    return input_data_;
-  }
+  InType GetTestInputData() final { return input_data_; }
 
  private:
   InType input_data_;
@@ -68,9 +64,7 @@ class ShelenkovaMRunFuncTestsShellSort : public ppc::util::BaseRunFuncTests<InTy
 
 namespace {
 
-TEST_P(ShelenkovaMRunFuncTestsShellSort, ShellSortSimpleMerge) {
-  ExecuteTest(GetParam());
-}
+TEST_P(ShelenkovaMRunFuncTestsShellSort, ShellSortSimpleMerge) { ExecuteTest(GetParam()); }
 
 const std::array<TestType, 12> kTestParam = []() {
   std::array<TestType, 12> arr;
@@ -80,15 +74,15 @@ const std::array<TestType, 12> kTestParam = []() {
   return arr;
 }();
 
-const auto kTestTasksList = std::tuple_cat(
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSEQ, InType>(kTestParam,
-                                                                        PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeOMP, InType>(kTestParam,
-                                                                        PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeTBB, InType>(kTestParam,
-                                                                        PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSTL, InType>(kTestParam,
-                                                                        PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge));
+const auto kTestTasksList =
+    std::tuple_cat(ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSEQ, InType>(
+                       kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+                   ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeOMP, InType>(
+                       kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+                   ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeTBB, InType>(
+                       kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+                   ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSTL, InType>(
+                       kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
