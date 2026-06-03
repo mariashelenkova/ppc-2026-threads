@@ -25,13 +25,13 @@ class ShelenkovaMShellSortSimpleMergeFuncTests : public ppc::util::BaseRunFuncTe
  protected:
   void SetUp() override {
     TestType param = std::get<static_cast<int>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
-    int vector_size = param;
-    input_data_ = std::vector<int>(vector_size, 0);
-    int random_seed = 42;
-    std::mt19937 rng(random_seed);
+    int sz = param;
+    input_data_ = std::vector<int>(sz, 0);
+    int seed = 1;
+    std::mt19937 rng(seed);
     std::uniform_int_distribution<int> dist(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
-    for (auto &element : input_data_) {
-      element = dist(rng);
+    for (auto &i : input_data_) {
+      i = dist(rng);
     }
     expected_data_ = input_data_;
     std::ranges::sort(expected_data_);
@@ -42,8 +42,8 @@ class ShelenkovaMShellSortSimpleMergeFuncTests : public ppc::util::BaseRunFuncTe
       return false;
     }
 
-    for (std::size_t position = 0; position < output_data.size(); position++) {
-      if (output_data[position] != expected_data_[position]) {
+    for (std::size_t i = 0; i < output_data.size(); i++) {
+      if (output_data[i] != expected_data_[i]) {
         return false;
       }
     }
@@ -57,7 +57,7 @@ class ShelenkovaMShellSortSimpleMergeFuncTests : public ppc::util::BaseRunFuncTe
 
  public:
   static std::string PrintTestParam(const TestType &param) {
-    return "VectorSize_" + std::to_string(param);
+    return "Size_" + std::to_string(param);
   }
 
  private:
@@ -67,24 +67,24 @@ class ShelenkovaMShellSortSimpleMergeFuncTests : public ppc::util::BaseRunFuncTe
 
 namespace {
 
-TEST_P(ShelenkovaMShellSortSimpleMergeFuncTests, shellSortMergeTest) {
+TEST_P(ShelenkovaMShellSortSimpleMergeFuncTests, shellMergeTest) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 4> kTestParameters = {1, 10, 100, 1000};
+const std::array<TestType, 4> kTestParam = {1, 10, 100, 1000};
 
-const auto kAllTestTasks = std::tuple_cat(
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSEQ, InType>(kTestParameters, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeOMP, InType>(kTestParameters, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeTBB, InType>(kTestParameters, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSTL, InType>(kTestParameters, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
-    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeALL, InType>(kTestParameters, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge));
+const auto kTestTasksList = std::tuple_cat(
+    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSEQ, InType>(kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeOMP, InType>(kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeTBB, InType>(kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeSTL, InType>(kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge),
+    ppc::util::AddFuncTask<ShelenkovaMShellSortSimpleMergeALL, InType>(kTestParam, PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge));
 
-const auto kGtestValuesList = ppc::util::ExpandToValues(kAllTestTasks);
+const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kTestCaseName = ShelenkovaMShellSortSimpleMergeFuncTests::PrintFuncTestName<ShelenkovaMShellSortSimpleMergeFuncTests>;
+const auto kTestName = ShelenkovaMShellSortSimpleMergeFuncTests::PrintFuncTestName<ShelenkovaMShellSortSimpleMergeFuncTests>;
 
-INSTANTIATE_TEST_SUITE_P(shellSortSimpleMergeFuncTests, ShelenkovaMShellSortSimpleMergeFuncTests, kGtestValuesList, kTestCaseName);
+INSTANTIATE_TEST_SUITE_P(shellSortSimpleMergeFuncTests, ShelenkovaMShellSortSimpleMergeFuncTests, kGtestValues, kTestName);
 
 }  // namespace
 
