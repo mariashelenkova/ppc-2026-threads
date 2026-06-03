@@ -19,30 +19,30 @@ namespace shelenkova_m_shell_sort_simple_merge {
 class ShelenkovaMShellSortSimpleMergeRunPerfTest : public ppc::util::BaseRunPerfTests<InType, OutType> {
  protected:
   void SetUp() override {
-    int total_elements = 2000000;
+    int dim = 2000000;
 
-    InType &source_vector = input_data_;
-    source_vector.clear();
-    source_vector.reserve(total_elements);
+    InType &in = input_data_;
+    in.clear();
+    in.reserve(dim);
 
-    int generator_seed = 777;
-    std::mt19937 random_generator(generator_seed);
-    std::uniform_int_distribution<int> value_distribution(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+    int seed = 1;
+    std::mt19937 rng(seed);
+    std::uniform_int_distribution<int> dist(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 
-    for (int element_index = 0; element_index < total_elements; ++element_index) {
-      source_vector.push_back(value_distribution(random_generator));
+    for (int i = 0; i < dim; ++i) {
+      in.push_back(dist(rng));
     }
 
-    sorted_reference_ = source_vector;
-    std::ranges::sort(sorted_reference_);
+    test_result_ = in;
+    std::ranges::sort(test_result_);
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    if (output_data.size() != sorted_reference_.size()) {
+    if (output_data.size() != test_result_.size()) {
       return false;
     }
-    for (std::size_t idx = 0; idx < output_data.size(); ++idx) {
-      if (output_data[idx] != sorted_reference_[idx]) {
+    for (std::size_t i = 0; i < output_data.size(); ++i) {
+      if (output_data[i] != test_result_[i]) {
         return false;
       }
     }
@@ -55,26 +55,25 @@ class ShelenkovaMShellSortSimpleMergeRunPerfTest : public ppc::util::BaseRunPerf
 
  private:
   InType input_data_;
-  OutType sorted_reference_;
+  OutType test_result_;
 };
 
-TEST_P(ShelenkovaMShellSortSimpleMergeRunPerfTest, PerformanceSortTest) {
+TEST_P(ShelenkovaMShellSortSimpleMergeRunPerfTest, PerfSortTest) {
   ExecuteTest(GetParam());
 }
 
 namespace {
 
-const auto kAllPerformanceTasks =
-    ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeSEQ, ShelenkovaMShellSortSimpleMergeOMP, 
+const auto kAllPerfTasks =
+    ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeSEQ, ShelenkovaMShellSortSimpleMergeOMP,
                                 ShelenkovaMShellSortSimpleMergeTBB, ShelenkovaMShellSortSimpleMergeSTL,
                                 ShelenkovaMShellSortSimpleMergeALL>(PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
 
-const auto kGtestPerformanceValues = ppc::util::TupleToGTestValues(kAllPerformanceTasks);
+const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-const auto kPerformanceTestName = ShelenkovaMShellSortSimpleMergeRunPerfTest::CustomPerfTestName;
+const auto kPerfTestName = ShelenkovaMShellSortSimpleMergeRunPerfTest::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(shellSortSimpleMergePerfTests, ShelenkovaMShellSortSimpleMergeRunPerfTest, 
-                         kGtestPerformanceValues, kPerformanceTestName);
+INSTANTIATE_TEST_SUITE_P(shellSortSimpleMergePerfTests, ShelenkovaMShellSortSimpleMergeRunPerfTest, kGtestValues, kPerfTestName);
 
 }  // namespace
 
