@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <limits>
 #include <random>
+#include <vector>
 
 #include "performance/include/performance.hpp"
 #include "shelenkova_m_shell_sort_simple_merge/common/include/common.hpp"
@@ -17,66 +19,67 @@ namespace shelenkova_m_shell_sort_simple_merge {
 
 namespace {
 
-constexpr double kNanosToSeconds = 1e-9;
-constexpr int kMinRandomValue = -1000000;
-constexpr int kMaxRandomValue = 1000000;
+constexpr double kConversionFactor = 1e-9;
+constexpr int kLowerBound = -1000000;
+constexpr int kUpperBound = 1000000;
+constexpr size_t kDatasetSize = 100000;
 
 }  // namespace
 
-class ShelenkovaMRunPerfTestShellSort : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  static constexpr size_t kCount = 100000;
-  InType input_data_;
+class ShellSortPerformanceEvaluation : public ppc::util::BaseRunPerfTests<InType, OutType> {
+  static constexpr size_t kArraySize = kDatasetSize;
+  InType test_data_;
 
  protected:
-  void SetPerfAttributes(ppc::performance::PerfAttr &perf_attr) override {
-    const auto t0 = std::chrono::steady_clock::now();
-    perf_attr.current_timer = [t0] {
-      auto now = std::chrono::steady_clock::now();
-      auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now - t0).count();
-      return static_cast<double>(ns) * kNanosToSeconds;
+  void ConfigurePerformanceMetrics(ppc::performance::PerfAttr& metrics) override {
+    const auto start_time = std::chrono::steady_clock::now();
+    metrics.current_timer = [start_time] {
+      auto current_time = std::chrono::steady_clock::now();
+      auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(current_time - start_time).count();
+      return static_cast<double>(elapsed_ns) * kConversionFactor;
     };
-    perf_attr.num_running = 10;  
+    metrics.num_running = 5;
   }
 
-  void SetUp() override {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dist(kMinRandomValue, kMaxRandomValue);
+  void InitializeTestData() override {
+    std::random_device random_device;
+    std::mt19937 generator(random_device());
+    std::uniform_int_distribution<int> distribution(kLowerBound, kUpperBound);
 
-    input_data_.resize(kCount);
-    for (size_t i = 0; i < kCount; ++i) {
-      input_data_[i] = dist(gen);
+    test_data_.resize(kArraySize);
+    for (size_t i = 0; i < kArraySize; ++i) {
+      test_data_[i] = distribution(generator);
     }
   }
 
-  bool CheckTestOutputData(OutType &output_data) final {
-    if (output_data.size() != input_data_.size()) {
+  bool VerifyResult(OutType& result) final {
+    if (result.size() != test_data_.size()) {
       return false;
     }
-    return std::is_sorted(output_data.begin(), output_data.end()); 
+    return std::is_sorted(result.begin(), result.end());
   }
 
-  InType GetTestInputData() final {
-    return input_data_;
+  InType ObtainInputData() final {
+    return test_data_;
   }
 };
 
-TEST_P(ShelenkovaMRunPerfTestShellSort, RunPerfShellSort) {
+TEST_P(ShellSortPerformanceEvaluation, MeasureSortingPerformance) {
   ExecuteTest(GetParam());
 }
 
 namespace {
 
-const auto kAllPerfTasks =
+const auto kAllPerformanceTasks =
     ppc::util::MakeAllPerfTasks<InType, ShelenkovaMShellSortSimpleMergeSEQ, ShelenkovaMShellSortSimpleMergeOMP,
                                 ShelenkovaMShellSortSimpleMergeTBB, ShelenkovaMShellSortSimpleMergeSTL>(
         PPC_SETTINGS_shelenkova_m_shell_sort_simple_merge);
 
-const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
+const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerformanceTasks);
 
-const auto kPerfTestName = ShelenkovaMRunPerfTestShellSort::CustomPerfTestName;
+const auto kPerformanceTestLabel = ShellSortPerformanceEvaluation::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(ShellSortPerfTests, ShelenkovaMRunPerfTestShellSort, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(ShellSortPerformanceTests, ShellSortPerformanceEvaluation, kGtestValues, kPerformanceTestLabel);
 
 }  // namespace
 
