@@ -11,36 +11,35 @@
 
 namespace shelenkova_m_shell_sort_simple_merge {
 
-void ShelenkovaMShellSortSimpleMergeSTL::GapBasedSort(std::vector<int>::iterator start_pos,
-                                                       std::vector<int>::iterator end_pos) {
-  for (std::ptrdiff_t gap = (end_pos - start_pos) / 2; gap > 0; gap /= 2) {
-    for (auto cur = start_pos + gap; cur != end_pos; ++cur) {
-      for (auto walk = cur; walk - start_pos >= gap && (*walk < *(walk - gap)); walk -= gap) {
-        std::swap(*walk, *(walk - gap));
+void ShelenkovaMShellSortSimpleMergeSTL::BaseShellSort(std::vector<int>::iterator first,
+                                                        std::vector<int>::iterator last) {
+  for (std::ptrdiff_t dist = (last - first) / 2; dist > 0; dist /= 2) {
+    for (auto i = first + dist; i != last; ++i) {
+      for (auto j = i; j - first >= dist && (*j < *(j - dist)); j -= dist) {
+        std::swap(*j, *(j - dist));
       }
     }
   }
 }
 
-std::vector<std::size_t> ShelenkovaMShellSortSimpleMergeSTL::CalculateChunks(std::size_t total_len,
-                                                                               std::size_t chunk_cnt) {
-  chunk_cnt = std::max<std::size_t>(1, std::min(chunk_cnt, total_len));
+std::vector<std::size_t> ShelenkovaMShellSortSimpleMergeSTL::GetBounds(std::size_t n, std::size_t parts) {
+  parts = std::max<std::size_t>(1, std::min(parts, n));
 
-  std::vector<std::size_t> boundaries;
-  boundaries.reserve(chunk_cnt + 1);
-  boundaries.push_back(0);
+  std::vector<std::size_t> bounds;
+  bounds.reserve(parts + 1);
+  bounds.push_back(0);
 
-  const std::size_t chunk_size_base = total_len / chunk_cnt;
-  const std::size_t remainder = total_len % chunk_cnt;
+  const std::size_t base = n / parts;
+  const std::size_t rem = n % parts;
 
-  for (std::size_t idx = 0; idx < chunk_cnt; ++idx) {
-    boundaries.push_back(boundaries.back() + chunk_size_base);
-    if (idx < remainder) {
-      boundaries[idx + 1]++;
+  for (std::size_t i = 0; i < parts; ++i) {
+    bounds.push_back(bounds.back() + base);
+    if (i < rem) {
+      bounds[i + 1]++;
     }
   }
 
-  return boundaries;
+  return bounds;
 }
 
 ShelenkovaMShellSortSimpleMergeSTL::ShelenkovaMShellSortSimpleMergeSTL(const InType &in) {
@@ -50,8 +49,8 @@ ShelenkovaMShellSortSimpleMergeSTL::ShelenkovaMShellSortSimpleMergeSTL(const InT
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::ValidationImpl() {
-  const InType &source = GetInput();
-  return !source.empty();
+  const InType &vec = GetInput();
+  return !vec.empty();
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::PreProcessingImpl() {
@@ -60,34 +59,33 @@ bool ShelenkovaMShellSortSimpleMergeSTL::PreProcessingImpl() {
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
-  std::vector<int> &data = GetOutput();
+  std::vector<int> &vec = GetOutput();
 
-  if (data.size() <= 1) {
+  if (vec.size() <= 1) {
     return true;
   }
 
-  const auto available_workers = static_cast<std::size_t>(ppc::util::GetNumThreads());
-  const std::size_t segment_count = std::min<std::size_t>(available_workers, data.size());
-  const auto segment_limits = CalculateChunks(data.size(), segment_count);
+  const auto threads = static_cast<std::size_t>(ppc::util::GetNumThreads());
+  const std::size_t parts_count = std::min<std::size_t>(threads, vec.size());
+  const auto bounds = GetBounds(vec.size(), parts_count);
 
-  std::vector<std::thread> worker_pool(segment_count);
+  std::vector<std::thread> thread_pool(parts_count);
 
-  for (std::size_t seg = 0; seg < segment_count; ++seg) {
-    const std::size_t left_border = segment_limits[seg];
-    const std::size_t right_border = segment_limits[seg + 1];
-    worker_pool[seg] = std::thread([&data, left_border, right_border]() {
-      GapBasedSort(data.begin() + static_cast<std::ptrdiff_t>(left_border),
-                   data.begin() + static_cast<std::ptrdiff_t>(right_border));
+  for (std::size_t i = 0; i < parts_count; ++i) {
+    const std::size_t l = bounds[i];
+    const std::size_t r = bounds[i + 1];
+    thread_pool[i] = std::thread([&vec, l, r]() {
+      BaseShellSort(vec.begin() + static_cast<std::ptrdiff_t>(l), vec.begin() + static_cast<std::ptrdiff_t>(r));
     });
   }
 
-  for (auto &thread_handle : worker_pool) {
-    thread_handle.join();
+  for (auto &t : thread_pool) {
+    t.join();
   }
 
-  for (std::size_t seg = 1; seg < segment_count; ++seg) {
-    std::inplace_merge(data.begin(), data.begin() + static_cast<std::ptrdiff_t>(segment_limits[seg]),
-                       data.begin() + static_cast<std::ptrdiff_t>(segment_limits[seg + 1]));
+  for (std::size_t i = 1; i < parts_count; ++i) {
+    std::inplace_merge(vec.begin(), vec.begin() + static_cast<std::ptrdiff_t>(bounds[i]),
+                       vec.begin() + static_cast<std::ptrdiff_t>(bounds[i + 1]));
   }
 
   return true;
