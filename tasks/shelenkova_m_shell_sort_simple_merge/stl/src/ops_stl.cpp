@@ -95,7 +95,7 @@ bool ShelenkovaMShellSortSimpleMergeSTL::RunImpl() {
     return false;
   }
   
-  return std::is_sorted(data.begin(), data.end());  // ИСПРАВЛЕНИЕ: используем std::is_sorted вместо std::ranges::is_sorted
+  return std::is_sorted(data.begin(), data.end());
 }
 
 bool ShelenkovaMShellSortSimpleMergeSTL::PostProcessingImpl() {
